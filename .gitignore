@@ -1,0 +1,12 @@
+# Ignore sensitive keys to file
+keys.ini
+
+# Ignore test cache and archive directories
+.test_cache/
+.test_archive/
+
+# Ignore virtual environment
+portfolioTracker/
+
+# Ignore Python cache directories
+__pycache__/
