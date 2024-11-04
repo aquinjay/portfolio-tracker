@@ -52,7 +52,7 @@ def fetch_data(symbol: str, function: str = "TIME_SERIES_DAILY", cache: bool = T
             return None
 
         df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index")
-        df.index = pd.to_datetime(df.index)  # Ensure the index is in datetime format
+        # df.index = pd.to_datetime(df.index)  # Ensure the index is in datetime format
         df = df.sort_index()  # Sort data by date
 
         # Cache the data if caching is enabled
