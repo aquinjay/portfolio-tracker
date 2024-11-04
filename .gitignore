@@ -4,6 +4,7 @@ keys.ini
 # Ignore test cache and archive directories
 .test_cache/
 .test_archive/
+.cache/
 
 # Ignore virtual environment
 portfolioTracker/

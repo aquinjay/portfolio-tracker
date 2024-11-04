@@ -28,19 +28,32 @@ class CacheManager:
             if cached_data is None:
                 logger.warning(f"No cached data found for {cache_key}.")
                 return False
-            if 'date' not in cached_data.columns:
-                logger.warning(f"'date' column is missing for {cache_key}.")
-                return False
-    
-            # Attempt to parse date column; handle any parsing issues gracefully
-            cached_data['date'] = pd.to_datetime(cached_data['date'], errors='coerce').dt.date
-            max_cached_date = cached_data['date'].max()
-            latest_trading_day = self.get_latest_trading_day().date()
-    
-            # Check if max_cached_date is valid (not None or NaT)
-            if max_cached_date is None or max_cached_date is pd.NaT:
+
+            if 'date' in cached_data.columns:
+                cached_data['date'] = pd.to_datetime(cached_data['date'], errors='coerce')
+                max_cached_date = cached_data['date'].max()
+            else:
+                cached_data.index = pd.to_datetime(cached_data.index, errors='coerce')
+                max_cached_date = cached_data.index.max()
+
+            if isinstance(max_cached_date, pd.Timestamp) and pd.isna(max_cached_date):
                 logger.info(f"Cached data for {cache_key} contains no valid dates.")
                 return False
+
+            # Convert max_cached_date to date if it’s a Timestamp for comparison
+            if isinstance(max_cached_date, pd.Timestamp):
+                if pd.isna(max_cached_date):
+                    logger.info(f"Cached data for {cache_key} contains no valid dates.")
+                    return False
+                max_cached_date = max_cached_date.date()
+            else:
+                logger.info(f"max_cached_date is not a Timestamp. Setting it to None.")
+                max_cached_date = None
+
+            if max_cached_date is None:
+                return False
+            
+            latest_trading_day = self.get_latest_trading_day().date()
     
             # Check if max_cached_date is up-to-date
             if max_cached_date < latest_trading_day:
@@ -138,8 +151,25 @@ if __name__ == "__main__":
     cache_manager.clear_cache_for_key(test_cache_key)
     logger.info("Cache stats after clearing specific key:")
 
+    # Test case: Data with date as index
+    test_cache_key_index = "AAPL_TEST_INDEX"
+    sample_data_index = pd.DataFrame({
+        'close': [150 + i for i in range(5)]
+    })
+    sample_data_index.index = pd.to_datetime([datetime.today() - timedelta(days=i) for i in range(5)])
+
+    # Save data with date as index to cache
+    cache_manager.save_to_cache(test_cache_key_index, sample_data_index)
+    logger.info(f"Testing with date as index. Cached data:\n{sample_data_index}")
+
+    # Check if cached data with date as index is up-to-date
+    is_up_to_date = cache_manager.is_data_up_to_date(test_cache_key_index)
+    logger.info(f"Is cached data (date as index) up-to-date? {is_up_to_date}")
+
     # Clear all cache and display final stats
     cache_manager.clear_all_cache()
     logger.info("Final cache stats after clearing all cache:")
 
+    cache_manager.clear_cache_for_key(test_cache_key_index)
+    cache_manager.clear_cache_for_key(test_cache_key)
     cache_manager.close()
