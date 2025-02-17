@@ -7,7 +7,10 @@ keys.ini
 .cache/
 
 # Ignore virtual environment
-portfolioTracker/
+pTrack/
 
 # Ignore Python cache directories
 __pycache__/
+
+# Ignore python versioning system
+.python-version
