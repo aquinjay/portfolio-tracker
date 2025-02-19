@@ -2,11 +2,11 @@ import requests
 import pandas as pd
 from loguru import logger
 from typing import Optional
-from url_builder_module import URLBuilder  # Import URLBuilder for URL construction
+from url_builder_module import AlphaVantageURLBuilder# Import URLBuilder for URL construction
 from cache_manager import CacheManager  # Import CacheManager for caching functionality
 
 # Initialize URLBuilder and CacheManager
-url_builder = URLBuilder()
+builder = AlphaVantageURLBuilder(config_file="keys.ini", config_section="alphavantage")
 cache_manager = CacheManager(cache_dir=".cache", archive_dir=".archive")
 
 
@@ -34,7 +34,7 @@ def fetch_data(symbol: str, function: str = "TIME_SERIES_DAILY", cache: bool = T
 
     # Use URLBuilder to construct the URL
     try:
-        url = url_builder(symbol, function)
+        url = builder(symbol, function)
     except ValueError as e:
         logger.error(f"Error constructing URL: {e}")
         return None
