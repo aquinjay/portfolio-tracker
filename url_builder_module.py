@@ -32,11 +32,11 @@ class BaseUrlBuilder(ABC):
         """
         pass
 
-    def __call__(self, **kwargs) -> str:
+    def __call__(self, *args,**kwargs) -> str:
         """
         Constructs the complete URL using the built query parameters.
         """
-        params = self.build_query_params(**kwargs)
+        params = self.build_query_params(*args, **kwargs)
         url = f"{self.BASE_URL}?{urlencode(params)}"
         return url
 
