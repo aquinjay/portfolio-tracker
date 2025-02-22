@@ -2,15 +2,18 @@ import requests
 import pandas as pd
 from loguru import logger
 from typing import Optional
-from url_builder_module import AlphaVantageURLBuilder# Import URLBuilder for URL construction
+from url_builder_module import AlphaVantageURLBuilder # Import URLBuilder for URL construction
 from cache_manager import CacheManager  # Import CacheManager for caching functionality
 
 # Initialize URLBuilder and CacheManager
-builder = AlphaVantageURLBuilder(config_file="keys.ini", config_section="alphavantage")
 cache_manager = CacheManager(cache_dir=".cache", archive_dir=".archive")
 
-
-def fetch_data(symbol: str, function: str = "TIME_SERIES_DAILY", cache: bool = True) -> Optional[pd.DataFrame]:
+def fetch_data(
+    symbol: str, 
+    function: str = "TIME_SERIES_DAILY", 
+    cache: bool = True, 
+    builder = None
+    ) -> Optional[pd.DataFrame]:
     """
     Fetches data from the API for a given symbol and returns it as a DataFrame.
     Optionally uses caching to avoid redundant API calls.
@@ -23,6 +26,10 @@ def fetch_data(symbol: str, function: str = "TIME_SERIES_DAILY", cache: bool = T
     Returns:
         Optional[pd.DataFrame]: A DataFrame containing the stock data if successful, None otherwise.
     """
+    if builder is None:
+        from url_builder_module import AlphaVantageURLBuilder
+        builder = AlphaVantageURLBuilder(config_file="keys.ini", config_section="alphavantage")
+
     cache_key = f"{symbol}_{function}"
 
     # Check cache first if caching is enabled
@@ -72,7 +79,7 @@ def fetch_data(symbol: str, function: str = "TIME_SERIES_DAILY", cache: bool = T
 
 if __name__ == "__main__":
     # Test fetching data for a specific symbol
-    test_symbol = "SWPPX"
+    test_symbol = "AAPL"
     data = fetch_data(test_symbol)
 
     if data is not None:
