@@ -4,10 +4,15 @@ from loguru import logger
 from typing import Optional
 from url_builder_module import AlphaVantageURLBuilder # Import URLBuilder for URL construction
 from cache_manager import CacheManager  # Import CacheManager for caching functionality
+from cache_decorator import cache_decorator
 
-# Initialize URLBuilder and CacheManager
-cache_manager = CacheManager(cache_dir=".cache", archive_dir=".archive")
+# Optionally define a custom key function if needed
+def my_cache_key(*args, **kwargs) -> str:
+    symbol = args[0] if len(args) > 0 else kwargs.get("symbol")
+    function = args[0] if len(args) > 0 else kwargs.get("function", "TIME_SERIES_DAILY")
+    return f"{symbol}_{function}"
 
+@cache_decorator(key_func=my_cache_key, use_cache=True)
 def fetch_data(
     symbol: str, 
     function: str = "TIME_SERIES_DAILY", 
@@ -16,7 +21,7 @@ def fetch_data(
     ) -> Optional[pd.DataFrame]:
     """
     Fetches data from the API for a given symbol and returns it as a DataFrame.
-    Optionally uses caching to avoid redundant API calls.
+    Caching is handled by the decorator.
 
     Args:
         symbol (str): The stock symbol to fetch data for.
@@ -29,15 +34,6 @@ def fetch_data(
     if builder is None:
         from url_builder_module import AlphaVantageURLBuilder
         builder = AlphaVantageURLBuilder(config_file="keys.ini", config_section="alphavantage")
-
-    cache_key = f"{symbol}_{function}"
-
-    # Check cache first if caching is enabled
-    if cache and cache_manager.is_data_up_to_date(cache_key):
-        logger.info(f"Loading cached data for {symbol}.")
-        cached_data = cache_manager.load_cached_data(cache_key)
-        if cached_data is not None:
-            return cached_data
 
     # Use URLBuilder to construct the URL
     try:
@@ -61,11 +57,6 @@ def fetch_data(
         df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index")
         # df.index = pd.to_datetime(df.index)  # Ensure the index is in datetime format
         df = df.sort_index()  # Sort data by date
-
-        # Cache the data if caching is enabled
-        if cache:
-            logger.info(f"Caching data for {symbol}.")
-            cache_manager.save_to_cache(cache_key, df)
 
         return df
 
