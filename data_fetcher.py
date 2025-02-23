@@ -3,7 +3,6 @@ import pandas as pd
 from loguru import logger
 from typing import Optional
 from url_builder_module import AlphaVantageURLBuilder # Import URLBuilder for URL construction
-from cache_manager import CacheManager  # Import CacheManager for caching functionality
 from cache_decorator import cache_decorator
 
 # Optionally define a custom key function if needed
@@ -16,7 +15,6 @@ def my_cache_key(*args, **kwargs) -> str:
 def fetch_data(
     symbol: str, 
     function: str = "TIME_SERIES_DAILY", 
-    cache: bool = True, 
     builder = None
     ) -> Optional[pd.DataFrame]:
     """

@@ -1,4 +1,5 @@
 from diskcache import FanoutCache, Disk
+from concurrent.futures import ThreadPoolExecutor
 import os
 import psutil
 import pandas as pd
@@ -17,6 +18,8 @@ class CacheManager:
         self.cache = FanoutCache(cache_dir, disk=Disk, size_limit=size_limit)
         self.archive_dir = archive_dir
         os.makedirs(archive_dir, exist_ok=True)
+        #NOTE: Need to better optimize number of workers
+        self.executor = ThreadPoolExecutor(max_workers=1) 
         logger.info(f"Initialized cache with size limit set to {size_limit} bytes (one-quarter of total RAM)")
 
  
@@ -80,7 +83,13 @@ class CacheManager:
         else:
             return None
 
-    def save_to_cache(self, cache_key: str, data: pd.DataFrame):
+    def save_to_cache(self, cache_key: str, data: pd.DataFrame) -> None:
+        """
+        Asynchronously caches the provided data so that the main process isn't blocked.
+        """
+        self.executor.submit(self._save_to_cache_sync, cache_key, data)
+
+    def _save_to_cache_sync(self, cache_key: str, data: pd.DataFrame) -> None:
         """
         Caches the provided data and ensures it's initially stored in memory.
         """
@@ -88,20 +97,20 @@ class CacheManager:
         self.cache.set(cache_key, data)
         logger.info(f"Data saved to cache for {cache_key}")
 
-    def archive_data(self, cache_key: str, old_data: pd.DataFrame):
+    def archive_data(self, cache_key: str, old_data: pd.DataFrame) -> None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         archive_path = os.path.join(self.archive_dir, f"{cache_key}_{timestamp}.csv")
         old_data.to_csv(archive_path, index=False)
         logger.info(f"Archived old data for {cache_key} to {archive_path}")
 
-    def clear_cache_for_key(self, cache_key: str):
+    def clear_cache_for_key(self, cache_key: str) -> None:
         if cache_key in self.cache:
             del self.cache[cache_key]
             logger.info(f"Cleared cache for {cache_key}")
         else:
             logger.info(f"No cache entry found for {cache_key} to clear.")
 
-    def clear_all_cache(self):
+    def clear_all_cache(self) -> None:
         self.cache.clear()
         logger.info("Cleared the entire cache")
 
@@ -122,6 +131,11 @@ class CacheManager:
 
             
     def close(self):
+        """
+        Shutdown the executor when you are done.
+        """
+        self.executor.shutdown(wait=False)
+
         self.cache.close()
         logger.info("Flushed in-memory cache to disk on exit.")
 

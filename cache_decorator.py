@@ -3,9 +3,11 @@ from functools import wraps
 from typing import Callable, Any
 from loguru import logger
 from cache_manager import CacheManager  # Import your CacheManager
+import atexit
 
 # Create a global CacheManager instance
 cache_manager = CacheManager(cache_dir=".cache", archive_dir=".archive")
+atexit.register(cache_manager.close)
 
 def cache_decorator(key_func: Callable[..., str] = None, use_cache: bool = True):
     """
