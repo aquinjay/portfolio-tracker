@@ -9,13 +9,18 @@ from cache_decorator import cache_decorator
 def my_cache_key(*args, **kwargs) -> str:
     symbol = args[0] if len(args) > 0 else kwargs.get("symbol")
     function = args[0] if len(args) > 0 else kwargs.get("function", "TIME_SERIES_DAILY")
+
+    if function == "HISTORICAL_OPTIONS" and "date" in kwargs:
+        date_val = kwargs["date"]
+        return f"{symbol}_{function}_{date_val}"
     return f"{symbol}_{function}"
 
 @cache_decorator(key_func=my_cache_key, use_cache=True)
 def fetch_data(
     symbol: str, 
     function: str = "TIME_SERIES_DAILY", 
-    builder = None
+    builder = None,
+    **kwargs
     ) -> Optional[pd.DataFrame]:
     """
     Fetches data from the API for a given symbol and returns it as a DataFrame.
@@ -35,7 +40,7 @@ def fetch_data(
 
     # Use URLBuilder to construct the URL
     try:
-        url = builder(symbol, function)
+        url = builder(symbol, function, **kwargs)
     except ValueError as e:
         logger.error(f"Error constructing URL: {e}")
         return None
@@ -76,3 +81,10 @@ if __name__ == "__main__":
     else:
         logger.warning(f"Failed to fetch data for {test_symbol}.")
 
+  # Example: using HISTORICAL_OPTIONS with the date parameter.
+    try:
+        logger.info("Testing options data pull")
+        data_options = fetch_data(test_symbol, function="HISTORICAL_OPTIONS", date="2025-02-20")
+        logger.info(f"Fetched historical options data for {test_symbol}:\n{data_options.head()}")
+    except Exception as e:
+        logger.error(f"Error fetching historical options data for {test_symbol}: {e}")

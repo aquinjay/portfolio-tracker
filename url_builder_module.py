@@ -45,30 +45,56 @@ class AlphaVantageURLBuilder(BaseUrlBuilder):
     URL builder for the Alpha Vantage API.
     """
     BASE_URL = 'https://www.alphavantage.co/query'
-    VALID_FUNCTIONS = {'TIME_SERIES_INTRADAY', 'TIME_SERIES_DAILY', 'TIME_SERIES_WEEKLY', 'TIME_SERIES_MONTHLY'}
+    VALID_FUNCTIONS = {'HISTORICAL_OPTIONS','TIME_SERIES_INTRADAY', 'TIME_SERIES_DAILY', 'TIME_SERIES_WEEKLY', 'TIME_SERIES_MONTHLY'}
 
     def build_query_params(self, symbol: str, function: str = 'TIME_SERIES_DAILY', **kwargs) -> Dict[str, Any]:
         """
         Constructs query parameters for Alpha Vantage.
         """
-        self._validate_inputs(symbol, function)
+        self._validate_inputs(symbol, function, **kwargs)
         params = {
             'apikey': self.API_KEY,
             'datatype': 'json',
             'function': function,
             'symbol': symbol
         }
+
+        # If the function is HISTORICAL_OPTIONS, ensure we explicitly set the 'date' parameter.
+        if function == 'HISTORICAL_OPTIONS':
+            # Pop the date from kwargs so it doesn't get duplicated later.
+            date_value = kwargs.pop('date', None)
+            if date_value is not None:
+                params['date'] = date_value
+            # Otherwise, _validate_inputs should have already raised an error.
         params.update(kwargs)
         return params
 
-    def _validate_inputs(self, symbol: Optional[str], function: Optional[str]) -> None:
+    def _validate_inputs(self, symbol: Optional[str], function: Optional[str], **kwargs) -> None:
         """
         Validates that the symbol is provided and the function is allowed.
         """
-        if not symbol:
-            raise ValueError("Symbol must be provided.")
-        if function not in self.VALID_FUNCTIONS:
-            raise ValueError(f"Invalid function '{function}'. Must be one of {self.VALID_FUNCTIONS}.")
+        errors = []
+
+        if not symbol or function not in self.VALID_FUNCTIONS:
+            if not symbol:
+                errors.append("Symbol must be provided")
+            if function not in self.VALID_FUNCTIONS:
+                errors.append(f"Invalid function {function}. Must be one of {self.VALID_FUNCTIONS}.")
+
+        # Mapping of functions to their required parameters.
+        required_params = {
+            "HISTORICAL_OPTIONS": ["date"],
+            # Add other function-specific requirements if needed.
+        }
+            
+        # If the function has extra required parameters, check for them.
+        if function in required_params:
+            missing = [param for param in required_params[function] if param not in kwargs]
+            if missing:
+                errors.append(f"For {function}, missing required parameter(s): {', '.join(missing)}.")
+        
+            if errors:
+                raise ValueError(" ".join(errors))
 
 # Test code within the module
 if __name__ == "__main__":
@@ -76,7 +102,7 @@ if __name__ == "__main__":
     builder = AlphaVantageURLBuilder(config_file="keys.ini", config_section="alphavantage")
     
     # Generate and log a URL for a single case
-    url = builder(symbol="APPL", function="TIME_SERIES_DAILY")
+    url = builder(symbol="APPL", function="HISTORICAL_OPTIONS", date="2025-02-20")
     logger.info(url)
 
     # Define test cases, including both valid and invalid cases
