@@ -4,6 +4,7 @@ from loguru import logger
 from typing import Optional
 from url_builder_module import AlphaVantageURLBuilder # Import URLBuilder for URL construction
 from cache_decorator import cache_decorator
+from rate_limiter import rate_limited
 
 # Optionally define a custom key function if needed
 def my_cache_key(*args, **kwargs) -> str:
@@ -16,6 +17,7 @@ def my_cache_key(*args, **kwargs) -> str:
     return f"{symbol}_{function}"
 
 @cache_decorator(key_func=my_cache_key, use_cache=True)
+@rate_limited(delay=0)
 def fetch_data(
     symbol: str, 
     function: str = "TIME_SERIES_DAILY", 
@@ -82,9 +84,10 @@ if __name__ == "__main__":
         logger.warning(f"Failed to fetch data for {test_symbol}.")
 
   # Example: using HISTORICAL_OPTIONS with the date parameter.
-    try:
-        logger.info("Testing options data pull")
-        data_options = fetch_data(test_symbol, function="HISTORICAL_OPTIONS", date="2025-02-20")
-        logger.info(f"Fetched historical options data for {test_symbol}:\n{data_options.head()}")
-    except Exception as e:
-        logger.error(f"Error fetching historical options data for {test_symbol}: {e}")
+    if False:
+        try:
+            logger.info("Testing options data pull")
+            data_options = fetch_data(test_symbol, function="HISTORICAL_OPTIONS", date="2025-02-20")
+            logger.info(f"Fetched historical options data for {test_symbol}:\n{data_options.head()}")
+        except Exception as e:
+            logger.error(f"Error fetching historical options data for {test_symbol}: {e}")
