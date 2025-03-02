@@ -4,7 +4,7 @@ from loguru import logger
 from typing import Optional
 from url_builder_module import AlphaVantageURLBuilder # Import URLBuilder for URL construction
 from cache_decorator import cache_decorator
-from rate_limiter import rate_limited
+from rl_decorator import rate_limited
 
 # Optionally define a custom key function if needed
 def my_cache_key(*args, **kwargs) -> str:
