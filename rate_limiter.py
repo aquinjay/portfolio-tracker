@@ -2,41 +2,61 @@ import time
 from functools import wraps
 from loguru import logger
 
-def rate_limited(delay: float = 0):
+def rate_limited(max_requests_per_minute: int):
     """
-    A decorator that adds a delay after the function call.
+    A decorator that limits the number of calls to a function to at most
+    max_requests_per_minute using a sliding-window algorithm.
     
     Args:
-        delay (float): Number of seconds to wait after the function call. Default is 0.
+        max_requests_per_minute (int): Maximum number of calls allowed in one minute.
+        
+    Returns:
+        The decorated function.
     """
+    interval = 60.0  # seconds per minute
+    call_timestamps = []  # list to store timestamps of recent calls
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            result = func(*args, **kwargs)
-            logger.info(f"Sleeping for {delay} seconds after calling {func.__name__}...")
-            time.sleep(delay)
-            return result
+            nonlocal call_timestamps
+            now = time.time()
+            # Remove timestamps older than one minute.
+            call_timestamps = [t for t in call_timestamps if now - t < interval]
+            if len(call_timestamps) >= max_requests_per_minute:
+                # Calculate the time to wait until the oldest call is older than one minute.
+                sleep_time = interval - (now - call_timestamps[0])
+                logger.info(f"Rate limit reached. Sleeping for {sleep_time:.2f} seconds...")
+                time.sleep(sleep_time)
+                now = time.time()
+                # Clean the timestamps again after sleeping.
+                call_timestamps = [t for t in call_timestamps if now - t < interval]
+            call_timestamps.append(now)
+            return func(*args, **kwargs)
         return wrapper
     return decorator
 
-# Test code for the rate limiter decorator.
+# ------------------------------------------------------------------------------
+# Test code for the rate_limited decorator
+# ------------------------------------------------------------------------------
+
 if __name__ == "__main__":
-    # Set up the logger to output to the console.
+    # Set up the logger to print INFO messages to the console.
     logger.remove()
     logger.add(lambda msg: print(msg, end=""), level="INFO")
     
-    @rate_limited(delay=0)  # Using the default delay of 0 seconds.
-    def test_func(x):
-        logger.info(f"test_func called with x = {x}")
+    @rate_limited(5)  # For testing, limit to 5 calls per minute.
+    def test_api_call(x):
+        logger.info(f"API call with x = {x}\n")
         return x * 2
 
     start_time = time.time()
+    results = []
     
-    # Call the function several times in a loop.
-    for i in range(5):
-        result = test_func(i)
-        logger.info(f"Result: {result}")
-
+    # Attempt to call test_api_call 10 times.
+    for i in range(10):
+        results.append(test_api_call(i))
+    
     end_time = time.time()
-    elapsed = end_time - start_time
-    logger.info(f"Total elapsed time: {elapsed:.2f} seconds")
+    logger.info(f"Results: {results}\n")
+    logger.info(f"Total elapsed time: {end_time - start_time:.2f} seconds\n")
