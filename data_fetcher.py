@@ -17,7 +17,7 @@ def my_cache_key(*args, **kwargs) -> str:
     return f"{symbol}_{function}"
 
 @cache_decorator(key_func=my_cache_key, use_cache=True)
-@rate_limited(delay=0)
+@rate_limited(5)
 def fetch_data(
     symbol: str, 
     function: str = "TIME_SERIES_DAILY", 
