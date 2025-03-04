@@ -25,7 +25,7 @@ def cache_decorator(key_func: Callable[..., str] = None, use_cache: bool = True)
         def wrapper(*args, **kwargs):
             # If caching is disabled, run the function directly.
             if not use_cache:
-                logger.info("Ran decorator")
+                # logger.info("Ran decorator")
                 return func(*args, **kwargs)
             
             # Generate a cache key.
@@ -40,7 +40,7 @@ def cache_decorator(key_func: Callable[..., str] = None, use_cache: bool = True)
             
             # Check if cached data is up-to-date.
             if cache_manager.is_data_up_to_date(cache_key):
-                logger.info(f"Cache hit for {cache_key}.")
+                # logger.info(f"Cache hit for {cache_key}.")
                 cached_data = cache_manager.load_cached_data(cache_key)
                 if cached_data is not None:
                     return cached_data

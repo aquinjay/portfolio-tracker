@@ -54,11 +54,6 @@ def fetch_data(
 
         data = response.json()
 
-        # Validate and process data
-        if "Time Series (Daily)" not in data:
-            logger.error(f"No valid data found for {symbol}. Response: {data}")
-            return None
-
         df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index")
         # df.index = pd.to_datetime(df.index)  # Ensure the index is in datetime format
         df = df.sort_index()  # Sort data by date

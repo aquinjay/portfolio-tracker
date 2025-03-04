@@ -5,6 +5,8 @@ keys.ini
 .test_cache/
 .test_archive/
 .cache/
+.test_processed_archive/
+.processed_archive/
 
 # Ignore virtual environment
 pTrack/
