@@ -220,7 +220,7 @@ if __name__ == "__main__":
     # Instantiate the processor with the test archive directory.
     processor = HistoricalOptionsDataProcessor(
         symbol="IBM",
-        start_date="2022-01-01",
+        start_date="2022-01-03",
         end_date="2022-01-03",
         archive_dir=".test_processed_archive",
         freq='B'
